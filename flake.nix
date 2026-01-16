@@ -27,7 +27,8 @@
       packages = forEachSupportedSystem (
         { pkgs }:
         let
-          mkAiWrapper = name: package: bwrapFlags:
+          mkAiWrapper = pkgs.lib.makeOverridable (
+            { name, package, bwrapFlags, extraBwrapFlags ? [] }:
             pkgs.writeShellScriptBin name ''
               ${pkgs.bubblewrap}/bin/bwrap \
                 --unshare-all \
@@ -49,26 +50,40 @@
                 --ro-bind-try "$HOME/.nix-profile" "$HOME/.nix-profile" \
                 --setenv PATH "$PATH" \
                 ${pkgs.lib.concatStringsSep " " bwrapFlags} \
+                ${pkgs.lib.concatStringsSep " " extraBwrapFlags} \
                 --bind "$(pwd)" "$(pwd)" \
                 --chdir "$(pwd)" \
                 -- ${pkgs.lib.getExe package} "$@"
-            '';
+            ''
+          );
         in
         {
-          claude-code = mkAiWrapper "claude-code" pkgs.claude-code [
-            ''--bind "$HOME/.claude" "$HOME/.claude"''
-          ];
-          opencode = mkAiWrapper "opencode" pkgs.opencode [
-            ''--bind "$HOME/.config/opencode" "$HOME/.config/opencode"''
-          ];
-          gemini-cli = mkAiWrapper "gemini-cli" pkgs.gemini-cli [
-            ''--setenv GEMINI_SANDBOX false''
-            ''--bind "$HOME/.gemini" "$HOME/.gemini"''
-          ];
-          gemini-cli-bin = mkAiWrapper "gemini-cli-bin" pkgs.gemini-cli-bin [
-            ''--setenv GEMINI_SANDBOX false''
-            ''--bind "$HOME/.gemini" "$HOME/.gemini"''
-          ];
+          claude-code = mkAiWrapper {
+            name = "claude-code";
+            package = pkgs.claude-code;
+            bwrapFlags = [ ''--bind "$HOME/.claude" "$HOME/.claude"'' ];
+          };
+          opencode = mkAiWrapper {
+            name = "opencode";
+            package = pkgs.opencode;
+            bwrapFlags = [ ''--bind "$HOME/.config/opencode" "$HOME/.config/opencode"'' ];
+          };
+          gemini-cli = mkAiWrapper {
+            name = "gemini-cli";
+            package = pkgs.gemini-cli;
+            bwrapFlags = [
+              ''--setenv GEMINI_SANDBOX false''
+              ''--bind "$HOME/.gemini" "$HOME/.gemini"''
+            ];
+          };
+          gemini-cli-bin = mkAiWrapper {
+            name = "gemini-cli-bin";
+            package = pkgs.gemini-cli-bin;
+            bwrapFlags = [
+              ''--setenv GEMINI_SANDBOX false''
+              ''--bind "$HOME/.gemini" "$HOME/.gemini"''
+            ];
+          };
         }
       );
     };

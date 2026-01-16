@@ -31,3 +31,16 @@ nix run github:maxouverzou/nix-ai-bubbles#gemini-cli
   ];
 }
 ```
+
+### Custom bwrap flags
+
+Use `.override` to add extra bubblewrap flags:
+
+```nix
+inputs.nix-ai-bubbles.packages.${pkgs.system}.claude-code.override {
+  extraBwrapFlags = [
+    ''--unsetenv SSH_AUTH_SOCK''
+    ''--unsetenv AWS_ACCESS_KEY_ID''
+  ];
+}
+```
