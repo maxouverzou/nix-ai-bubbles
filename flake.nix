@@ -55,6 +55,7 @@
                   --bind /tmp /tmp \
                   --ro-bind /nix /nix \
                   --ro-bind-try /usr /usr \
+                  --ro-bind-try /bin /bin \
                   --ro-bind-try /lib /lib \
                   --ro-bind-try /lib64 /lib64 \
                   --ro-bind "$(readlink -f /etc/resolv.conf)" /etc/resolv.conf \
