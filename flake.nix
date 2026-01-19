@@ -32,14 +32,14 @@
         let
           mkAiWrapper = final.lib.makeOverridable (
             {
-              name,
               package,
+              name ? baseNameOf (final.lib.getExe package),
               bwrapFlags,
               extraBwrapFlags ? [ ],
               version ? package.version or "unstable",
             }:
             final.writeShellApplication {
-              inherit name;
+              name = "${name}-jailed";
               runtimeInputs = [
                 final.coreutils
                 final.bubblewrap
@@ -72,7 +72,7 @@
                   -- ${final.lib.getExe package} "$@"
               '';
               derivationArgs = {
-                name = "${name}-${version}";
+                name = "${final.lib.getName package}-jailed-${version}";
                 inherit version;
               };
             }
@@ -80,17 +80,14 @@
         in
         {
           claude-code-jailed = mkAiWrapper {
-            name = "claude-code-jailed";
             package = final.claude-code;
             bwrapFlags = [ ''--bind "$HOME/.claude" "$HOME/.claude"'' ];
           };
           opencode-jailed = mkAiWrapper {
-            name = "opencode-jailed";
             package = final.opencode;
             bwrapFlags = [ ''--bind "$HOME/.config/opencode" "$HOME/.config/opencode"'' ];
           };
           gemini-cli-jailed = mkAiWrapper {
-            name = "gemini-cli-jailed";
             package = final.gemini-cli;
             bwrapFlags = [
               "--setenv GEMINI_SANDBOX false"
@@ -98,7 +95,6 @@
             ];
           };
           gemini-cli-bin-jailed = mkAiWrapper {
-            name = "gemini-cli-bin-jailed";
             package = final.gemini-cli-bin;
             bwrapFlags = [
               "--setenv GEMINI_SANDBOX false"
@@ -106,7 +102,6 @@
             ];
           };
           codex-jailed = mkAiWrapper {
-            name = "codex-jailed";
             package = final.codex;
             bwrapFlags = [ ''--bind "$HOME/.codex" "$HOME/.codex"'' ];
           };
