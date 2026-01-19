@@ -36,33 +36,45 @@
               package,
               bwrapFlags,
               extraBwrapFlags ? [ ],
+              version ? package.version or "unstable",
             }:
-            final.writeShellScriptBin name ''
-              ${final.bubblewrap}/bin/bwrap \
-                --unshare-all \
-                --share-net \
-                --die-with-parent \
-                --new-session \
-                --proc /proc \
-                --dev /dev \
-                --bind /tmp /tmp \
-                --ro-bind /nix /nix \
-                --ro-bind-try /usr /usr \
-                --ro-bind-try /lib /lib \
-                --ro-bind-try /lib64 /lib64 \
-                --ro-bind "$(readlink -f /etc/resolv.conf)" /etc/resolv.conf \
-                --ro-bind /etc/ssl /etc/ssl \
-                --ro-bind /etc/hosts /etc/hosts \
-                --ro-bind "$(readlink -f /etc/nsswitch.conf)" /etc/nsswitch.conf \
-                --ro-bind-try /etc/pki /etc/pki \
-                --ro-bind-try "$HOME/.nix-profile" "$HOME/.nix-profile" \
-                --setenv PATH "$PATH" \
-                ${final.lib.concatStringsSep " " bwrapFlags} \
-                ${final.lib.concatStringsSep " " extraBwrapFlags} \
-                --bind "$(pwd)" "$(pwd)" \
-                --chdir "$(pwd)" \
-                -- ${final.lib.getExe package} "$@"
-            ''
+            final.writeShellApplication {
+              inherit name;
+              runtimeInputs = [
+                final.coreutils
+                final.bubblewrap
+              ];
+              text = ''
+                bwrap \
+                  --unshare-all \
+                  --share-net \
+                  --die-with-parent \
+                  --new-session \
+                  --proc /proc \
+                  --dev /dev \
+                  --bind /tmp /tmp \
+                  --ro-bind /nix /nix \
+                  --ro-bind-try /usr /usr \
+                  --ro-bind-try /lib /lib \
+                  --ro-bind-try /lib64 /lib64 \
+                  --ro-bind "$(readlink -f /etc/resolv.conf)" /etc/resolv.conf \
+                  --ro-bind /etc/ssl /etc/ssl \
+                  --ro-bind /etc/hosts /etc/hosts \
+                  --ro-bind "$(readlink -f /etc/nsswitch.conf)" /etc/nsswitch.conf \
+                  --ro-bind-try /etc/pki /etc/pki \
+                  --ro-bind-try "$HOME/.nix-profile" "$HOME/.nix-profile" \
+                  --setenv PATH "$PATH" \
+                  ${final.lib.concatStringsSep " " bwrapFlags} \
+                  ${final.lib.concatStringsSep " " extraBwrapFlags} \
+                  --bind "$(pwd)" "$(pwd)" \
+                  --chdir "$(pwd)" \
+                  -- ${final.lib.getExe package} "$@"
+              '';
+              derivationArgs = {
+                name = "${name}-${version}";
+                inherit version;
+              };
+            }
           );
         in
         {
