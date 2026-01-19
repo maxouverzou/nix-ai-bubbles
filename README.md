@@ -8,6 +8,7 @@ Sandboxed AI coding assistants using bubblewrap.
 - `opencode`
 - `gemini-cli`
 - `gemini-cli-bin`
+- `codex`
 
 ## Usage
 
@@ -17,6 +18,7 @@ Sandboxed AI coding assistants using bubblewrap.
 nix run github:maxouverzou/nix-ai-bubbles#claude-code
 nix run github:maxouverzou/nix-ai-bubbles#opencode
 nix run github:maxouverzou/nix-ai-bubbles#gemini-cli
+nix run github:maxouverzou/nix-ai-bubbles#codex
 ```
 
 ### Using the overlay
@@ -44,6 +46,7 @@ The overlay exposes:
 - `opencode-jailed`
 - `gemini-cli-jailed`
 - `gemini-cli-bin-jailed`
+- `codex-jailed`
 
 ### Custom bwrap flags
 

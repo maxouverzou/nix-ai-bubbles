@@ -104,6 +104,11 @@
               ''--bind "$HOME/.gemini" "$HOME/.gemini"''
             ];
           };
+          codex-jailed = mkAiWrapper {
+            name = "codex-jailed";
+            package = final.codex;
+            bwrapFlags = [ ''--bind "$HOME/.codex" "$HOME/.codex"'' ];
+          };
         };
 
       packages = forEachSupportedSystem (
@@ -113,6 +118,7 @@
           opencode = pkgs.opencode-jailed;
           gemini-cli = pkgs.gemini-cli-jailed;
           gemini-cli-bin = pkgs.gemini-cli-bin-jailed;
+          codex = pkgs.codex-jailed;
         }
       );
     };
