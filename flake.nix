@@ -64,6 +64,8 @@
                   --ro-bind "$(readlink -f /etc/nsswitch.conf)" /etc/nsswitch.conf \
                   --ro-bind-try /etc/pki /etc/pki \
                   --ro-bind-try "$HOME/.nix-profile" "$HOME/.nix-profile" \
+                  --ro-bind-try "$HOME/.gitconfig" "$HOME/.gitconfig" \
+                  --ro-bind-try "$HOME/.config/git" "$HOME/.config/git" \
                   --setenv PATH "$PATH" \
                   ${final.lib.concatStringsSep " " bwrapFlags} \
                   ${final.lib.concatStringsSep " " extraBwrapFlags} \
