@@ -22,23 +22,23 @@
             pkgs = import inputs.nixpkgs {
               inherit system;
               config.allowUnfree = true;
+              overlays = [ self.overlays.default ];
             };
           }
         );
     in
     {
-      packages = forEachSupportedSystem (
-        { pkgs }:
+      overlays.default = final: prev:
         let
-          mkAiWrapper = pkgs.lib.makeOverridable (
+          mkAiWrapper = final.lib.makeOverridable (
             {
               name,
               package,
               bwrapFlags,
               extraBwrapFlags ? [ ],
             }:
-            pkgs.writeShellScriptBin name ''
-              ${pkgs.bubblewrap}/bin/bwrap \
+            final.writeShellScriptBin name ''
+              ${final.bubblewrap}/bin/bwrap \
                 --unshare-all \
                 --share-net \
                 --die-with-parent \
@@ -57,41 +57,50 @@
                 --ro-bind-try /etc/pki /etc/pki \
                 --ro-bind-try "$HOME/.nix-profile" "$HOME/.nix-profile" \
                 --setenv PATH "$PATH" \
-                ${pkgs.lib.concatStringsSep " " bwrapFlags} \
-                ${pkgs.lib.concatStringsSep " " extraBwrapFlags} \
+                ${final.lib.concatStringsSep " " bwrapFlags} \
+                ${final.lib.concatStringsSep " " extraBwrapFlags} \
                 --bind "$(pwd)" "$(pwd)" \
                 --chdir "$(pwd)" \
-                -- ${pkgs.lib.getExe package} "$@"
+                -- ${final.lib.getExe package} "$@"
             ''
           );
         in
         {
-          claude-code = mkAiWrapper {
+          claude-code-jailed = mkAiWrapper {
             name = "claude-code-jailed";
-            package = pkgs.claude-code;
+            package = final.claude-code;
             bwrapFlags = [ ''--bind "$HOME/.claude" "$HOME/.claude"'' ];
           };
-          opencode = mkAiWrapper {
+          opencode-jailed = mkAiWrapper {
             name = "opencode-jailed";
-            package = pkgs.opencode;
+            package = final.opencode;
             bwrapFlags = [ ''--bind "$HOME/.config/opencode" "$HOME/.config/opencode"'' ];
           };
-          gemini-cli = mkAiWrapper {
+          gemini-cli-jailed = mkAiWrapper {
             name = "gemini-cli-jailed";
-            package = pkgs.gemini-cli;
+            package = final.gemini-cli;
             bwrapFlags = [
               "--setenv GEMINI_SANDBOX false"
               ''--bind "$HOME/.gemini" "$HOME/.gemini"''
             ];
           };
-          gemini-cli-bin = mkAiWrapper {
+          gemini-cli-bin-jailed = mkAiWrapper {
             name = "gemini-cli-bin-jailed";
-            package = pkgs.gemini-cli-bin;
+            package = final.gemini-cli-bin;
             bwrapFlags = [
               "--setenv GEMINI_SANDBOX false"
               ''--bind "$HOME/.gemini" "$HOME/.gemini"''
             ];
           };
+        };
+
+      packages = forEachSupportedSystem (
+        { pkgs }:
+        {
+          claude-code = pkgs.claude-code-jailed;
+          opencode = pkgs.opencode-jailed;
+          gemini-cli = pkgs.gemini-cli-jailed;
+          gemini-cli-bin = pkgs.gemini-cli-bin-jailed;
         }
       );
     };
