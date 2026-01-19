@@ -28,7 +28,8 @@
         );
     in
     {
-      overlays.default = final: prev:
+      overlays.default =
+        final: prev:
         let
           mkAiWrapper = final.lib.makeOverridable (
             {
@@ -83,7 +84,10 @@
         {
           claude-code-jailed = mkAiWrapper {
             package = final.claude-code;
-            bwrapFlags = [ ''--bind "$HOME/.claude" "$HOME/.claude"'' ];
+            bwrapFlags = [
+              ''--bind "$HOME/.claude" "$HOME/.claude"''
+              ''--bind "$HOME/.claude.json" "$HOME/.claude.json"''
+            ];
           };
           opencode-jailed = mkAiWrapper {
             package = final.opencode;
