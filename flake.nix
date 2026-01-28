@@ -28,86 +28,91 @@
         );
     in
     {
+      lib.mkBwrapJail =
+        pkgs:
+        pkgs.lib.makeOverridable (
+          {
+            package,
+            name ? baseNameOf (pkgs.lib.getExe package),
+            bwrapFlags,
+            extraBwrapFlags ? [ ],
+            version ? package.version or "unstable",
+          }:
+          pkgs.writeShellApplication {
+            name = "${name}-jailed";
+            runtimeInputs = [
+              pkgs.coreutils
+              pkgs.bubblewrap
+            ];
+            text = ''
+              bwrap \
+                --unshare-all \
+                --share-net \
+                --die-with-parent \
+                --new-session \
+                --proc /proc \
+                --dev /dev \
+                --bind /tmp /tmp \
+                --ro-bind /nix /nix \
+                --ro-bind-try /usr /usr \
+                --ro-bind-try /bin /bin \
+                --ro-bind-try /lib /lib \
+                --ro-bind-try /lib64 /lib64 \
+                --ro-bind "$(readlink -f /etc/resolv.conf)" /etc/resolv.conf \
+                --ro-bind /etc/ssl /etc/ssl \
+                --ro-bind /etc/hosts /etc/hosts \
+                --ro-bind "$(readlink -f /etc/nsswitch.conf)" /etc/nsswitch.conf \
+                --ro-bind-try /etc/pki /etc/pki \
+                --ro-bind-try "$HOME/.nix-profile" "$HOME/.nix-profile" \
+                --ro-bind-try "$HOME/.gitconfig" "$HOME/.gitconfig" \
+                --ro-bind-try "$HOME/.config/git" "$HOME/.config/git" \
+                --setenv PATH "$PATH" \
+                ${pkgs.lib.concatStringsSep " " bwrapFlags} \
+                ${pkgs.lib.concatStringsSep " " extraBwrapFlags} \
+                --bind "$(pwd)" "$(pwd)" \
+                --chdir "$(pwd)" \
+                -- ${pkgs.lib.getExe package} "$@"
+            '';
+            derivationArgs = {
+              name = "${pkgs.lib.getName package}-jailed-${version}";
+              inherit version;
+            };
+          }
+        );
+
       overlays.default =
         final: prev:
         let
-          mkAiWrapper = final.lib.makeOverridable (
-            {
-              package,
-              name ? baseNameOf (final.lib.getExe package),
-              bwrapFlags,
-              extraBwrapFlags ? [ ],
-              version ? package.version or "unstable",
-            }:
-            final.writeShellApplication {
-              name = "${name}-jailed";
-              runtimeInputs = [
-                final.coreutils
-                final.bubblewrap
-              ];
-              text = ''
-                bwrap \
-                  --unshare-all \
-                  --share-net \
-                  --die-with-parent \
-                  --new-session \
-                  --proc /proc \
-                  --dev /dev \
-                  --bind /tmp /tmp \
-                  --ro-bind /nix /nix \
-                  --ro-bind-try /usr /usr \
-                  --ro-bind-try /bin /bin \
-                  --ro-bind-try /lib /lib \
-                  --ro-bind-try /lib64 /lib64 \
-                  --ro-bind "$(readlink -f /etc/resolv.conf)" /etc/resolv.conf \
-                  --ro-bind /etc/ssl /etc/ssl \
-                  --ro-bind /etc/hosts /etc/hosts \
-                  --ro-bind "$(readlink -f /etc/nsswitch.conf)" /etc/nsswitch.conf \
-                  --ro-bind-try /etc/pki /etc/pki \
-                  --ro-bind-try "$HOME/.nix-profile" "$HOME/.nix-profile" \
-                  --ro-bind-try "$HOME/.gitconfig" "$HOME/.gitconfig" \
-                  --ro-bind-try "$HOME/.config/git" "$HOME/.config/git" \
-                  --setenv PATH "$PATH" \
-                  ${final.lib.concatStringsSep " " bwrapFlags} \
-                  ${final.lib.concatStringsSep " " extraBwrapFlags} \
-                  --bind "$(pwd)" "$(pwd)" \
-                  --chdir "$(pwd)" \
-                  -- ${final.lib.getExe package} "$@"
-              '';
-              derivationArgs = {
-                name = "${final.lib.getName package}-jailed-${version}";
-                inherit version;
-              };
-            }
-          );
+          mkBwrapJail = self.lib.mkBwrapJail final;
         in
         {
-          claude-code-jailed = mkAiWrapper {
+          inherit mkBwrapJail;
+          claude-code-jailed = mkBwrapJail {
             package = final.claude-code;
             bwrapFlags = [
               ''--bind "$HOME/.claude" "$HOME/.claude"''
               ''--bind "$HOME/.claude.json" "$HOME/.claude.json"''
             ];
           };
-          opencode-jailed = mkAiWrapper {
+          opencode-jailed = mkBwrapJail {
             package = final.opencode;
             bwrapFlags = [ ''--bind "$HOME/.config/opencode" "$HOME/.config/opencode"'' ];
           };
-          gemini-cli-jailed = mkAiWrapper {
+          gemini-cli-jailed = mkBwrapJail {
             package = final.gemini-cli;
             bwrapFlags = [
               "--setenv GEMINI_SANDBOX false"
               ''--bind "$HOME/.gemini" "$HOME/.gemini"''
             ];
           };
-          gemini-cli-bin-jailed = mkAiWrapper {
+          gemini-cli-bin-jailed = mkBwrapJail {
             package = final.gemini-cli-bin;
             bwrapFlags = [
               "--setenv GEMINI_SANDBOX false"
               ''--bind "$HOME/.gemini" "$HOME/.gemini"''
             ];
           };
-          codex-jailed = mkAiWrapper {
+          codex-jailed = mkBwrapJail {
             package = final.codex;
             bwrapFlags = [ ''--bind "$HOME/.codex" "$HOME/.codex"'' ];
           };

@@ -28,6 +28,7 @@ Add the overlay to your nixpkgs and access the packages directly:
 ```nix
 {
   inputs.nix-ai-bubbles.url = "github:maxouverzou/nix-ai-bubbles";
+  inputs.nix-ai-bubbles.inputs.nixpkgs.follows = "nixpkgs";
 
   outputs = { nixpkgs, nix-ai-bubbles, ... }:
     let
@@ -36,7 +37,7 @@ Add the overlay to your nixpkgs and access the packages directly:
         overlays = [ nix-ai-bubbles.overlays.default ];
       };
     in {
-      # pkgs.claude-code-jailed, pkgs.opencode-jailed, etc. are now available
+      # pkgs.claude-code-jailed, pkgs.mkBwrapJail, etc. are now available
     };
 }
 ```
@@ -47,6 +48,7 @@ The overlay exposes:
 - `gemini-cli-jailed`
 - `gemini-cli-bin-jailed`
 - `codex-jailed`
+- `mkBwrapJail` (builder function)
 
 ### Custom bwrap flags
 
@@ -58,5 +60,27 @@ pkgs.claude-code-jailed.override {
     ''--unsetenv SSH_AUTH_SOCK''
     ''--unsetenv AWS_ACCESS_KEY_ID''
   ];
+}
+```
+
+## Creating custom jails
+
+You can use `mkBwrapJail` to sandbox any package.
+
+### Via Overlay
+
+```nix
+pkgs.mkBwrapJail {
+  package = pkgs.hello;
+  bwrapFlags = [ "--bind $HOME/.hello .hello" ];
+}
+```
+
+### Via Lib
+
+```nix
+inputs.nix-ai-bubbles.lib.mkBwrapJail pkgs {
+  package = pkgs.hello;
+  bwrapFlags = [ "--bind $HOME/.hello .hello" ];
 }
 ```
