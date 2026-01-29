@@ -96,7 +96,10 @@
           };
           opencode-jailed = mkBwrapJail {
             package = final.opencode;
-            bwrapFlags = [ ''--bind "$HOME/.config/opencode" "$HOME/.config/opencode"'' ];
+            bwrapFlags = [
+              ''--bind "$HOME/.config/opencode" "$HOME/.config/opencode"''
+              ''--bind "$HOME/.cache/opencode" "$HOME/.cache/opencode"''
+            ];
           };
           gemini-cli-jailed = mkBwrapJail {
             package = final.gemini-cli;
